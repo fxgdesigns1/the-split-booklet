@@ -212,7 +212,8 @@
 
       .mission-button,
       .nav-button,
-      .audio-toggle {
+      .audio-toggle,
+      .music-toggle {
         border: 1px solid rgba(255, 247, 223, 0.22);
         color: var(--cover-ink);
         cursor: pointer;
@@ -222,7 +223,8 @@
 
       .mission-button:hover,
       .nav-button:hover,
-      .audio-toggle:hover {
+      .audio-toggle:hover,
+      .music-toggle:hover {
         transform: translateY(-1px);
         border-color: rgba(215, 175, 87, 0.66);
       }
@@ -282,6 +284,42 @@
 
       .audio-toggle.is-live .mute-slash {
         opacity: 0;
+      }
+
+      .music-toggle {
+        position: fixed;
+        right: clamp(16px, 4vw, 34px);
+        top: clamp(16px, 4vw, 34px);
+        z-index: 4;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 42px;
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(10, 10, 9, 0.54);
+        color: rgba(255, 247, 223, 0.9);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+      }
+
+      .music-toggle svg {
+        width: 17px;
+        height: 17px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
+      }
+
+      .music-toggle.is-live {
+        background: rgba(215, 175, 87, 0.9);
+        color: #18120c;
       }
 
       .inside {
@@ -417,6 +455,15 @@
     </style>
   </head>
   <body>
+    <button class="music-toggle" id="musicToggle" type="button" aria-label="Play soulful house backing loop" title="Soulful house backing loop">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 18V5l10-2v13"></path>
+        <circle cx="6" cy="18" r="3"></circle>
+        <circle cx="16" cy="16" r="3"></circle>
+      </svg>
+      <span>Music</span>
+    </button>
+
     <main class="stage" aria-label="Interactive magazine booklet">
       <article class="book" id="book">
         <section class="cover" aria-label="The Split front cover">
@@ -524,6 +571,11 @@
       const missionTrigger = document.getElementById("missionTrigger");
       const skipTrigger = document.getElementById("skipTrigger");
       const closeTrigger = document.getElementById("closeTrigger");
+      const musicToggle = document.getElementById("musicToggle");
+      let musicContext;
+      let musicMaster;
+      let musicTimer;
+      let musicPlaying = false;
 
       function syncAudioButton() {
         const isLive = !coverVideo.muted;
@@ -540,6 +592,137 @@
         }
       }
 
+      function getMusicContext() {
+        if (!musicContext) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          musicContext = new AudioContext();
+          musicMaster = musicContext.createGain();
+          musicMaster.gain.value = 0.0001;
+          musicMaster.connect(musicContext.destination);
+        }
+
+        return musicContext;
+      }
+
+      function playTone(frequency, time, duration, type = "sine", level = 0.07) {
+        const context = getMusicContext();
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, time);
+        gain.gain.setValueAtTime(0.0001, time);
+        gain.gain.exponentialRampToValueAtTime(level, time + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+        oscillator.connect(gain);
+        gain.connect(musicMaster);
+        oscillator.start(time);
+        oscillator.stop(time + duration + 0.05);
+      }
+
+      function playHat(time) {
+        const context = getMusicContext();
+        const buffer = context.createBuffer(1, context.sampleRate * 0.05, context.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let index = 0; index < data.length; index += 1) {
+          data[index] = (Math.random() * 2 - 1) * (1 - index / data.length);
+        }
+
+        const noise = context.createBufferSource();
+        const filter = context.createBiquadFilter();
+        const gain = context.createGain();
+
+        noise.buffer = buffer;
+        filter.type = "highpass";
+        filter.frequency.value = 6200;
+        gain.gain.setValueAtTime(0.018, time);
+        gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(musicMaster);
+        noise.start(time);
+      }
+
+      function scheduleSoulfulHouseBar(startTime) {
+        const beat = 60 / 116;
+        const chords = [
+          [261.63, 329.63, 392.0],
+          [220.0, 277.18, 329.63],
+          [246.94, 311.13, 369.99],
+          [196.0, 246.94, 293.66],
+        ];
+
+        for (let beatIndex = 0; beatIndex < 4; beatIndex += 1) {
+          const time = startTime + beat * beatIndex;
+          playTone(55, time, 0.16, "sine", 0.13);
+          playHat(time + beat / 2);
+
+          chords[beatIndex].forEach((note, noteIndex) => {
+            playTone(note, time + 0.02 * noteIndex, beat * 0.82, "triangle", 0.018);
+          });
+        }
+      }
+
+      function syncMusicButton() {
+        musicToggle.classList.toggle("is-live", musicPlaying);
+        musicToggle.setAttribute(
+          "aria-label",
+          musicPlaying ? "Pause soulful house backing loop" : "Play soulful house backing loop",
+        );
+      }
+
+      function createSoulfulHouseLoop() {
+        const context = getMusicContext();
+        const beat = 60 / 116;
+        let nextBarTime = context.currentTime + 0.08;
+
+        musicMaster.gain.cancelScheduledValues(context.currentTime);
+        musicMaster.gain.setValueAtTime(musicMaster.gain.value, context.currentTime);
+        musicMaster.gain.linearRampToValueAtTime(0.12, context.currentTime + 0.7);
+        scheduleSoulfulHouseBar(nextBarTime);
+        nextBarTime += beat * 4;
+
+        musicTimer = window.setInterval(() => {
+          if (context.currentTime + 1.1 >= nextBarTime) {
+            scheduleSoulfulHouseBar(nextBarTime);
+            nextBarTime += beat * 4;
+          }
+        }, 300);
+      }
+
+      function startMusic() {
+        const context = getMusicContext();
+
+        context.resume()
+          .then(() => {
+            if (musicPlaying) {
+              return;
+            }
+
+            musicPlaying = true;
+            syncMusicButton();
+            createSoulfulHouseLoop();
+          })
+          .catch(() => {
+            syncMusicButton();
+          });
+      }
+
+      function stopMusic() {
+        if (!musicContext || !musicPlaying) {
+          return;
+        }
+
+        window.clearInterval(musicTimer);
+        musicTimer = undefined;
+        musicPlaying = false;
+        musicMaster.gain.cancelScheduledValues(musicContext.currentTime);
+        musicMaster.gain.setValueAtTime(musicMaster.gain.value, musicContext.currentTime);
+        musicMaster.gain.linearRampToValueAtTime(0.0001, musicContext.currentTime + 0.35);
+        syncMusicButton();
+      }
+
       function startAudibleBriefing() {
         book.classList.remove("is-open");
         coverVideo.currentTime = 0;
@@ -551,6 +734,7 @@
 
       function openBook() {
         book.classList.add("is-open");
+        startMusic();
       }
 
       function closeBook() {
@@ -564,6 +748,7 @@
       window.addEventListener("DOMContentLoaded", () => {
         coverVideo.muted = true;
         syncAudioButton();
+        syncMusicButton();
         playCoverVideo();
       });
 
@@ -581,6 +766,14 @@
       skipTrigger.addEventListener("click", openBook);
       closeTrigger.addEventListener("click", closeBook);
       coverVideo.addEventListener("ended", openBook);
+      musicToggle.addEventListener("click", () => {
+        if (musicPlaying) {
+          stopMusic();
+          return;
+        }
+
+        startMusic();
+      });
     </script>
   </body>
 </html>
