@@ -6,11 +6,13 @@ import assert from "node:assert/strict";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const indexPath = join(root, "index.html");
 const videoPath = join(root, "assets", "video", "Man_speaking_with_cigar_202605191432.mp4");
+const celebrationVideoPath = join(root, "assets", "video", "Animate_image_with_dialogue_202605241142.mp4");
 const backgroundPath = join(root, "assets", "images", "groom-shave-background.jpeg");
 const pageBackgroundPath = join(root, "assets", "images", "suit-fitting-background.jpeg");
 
 assert.ok(existsSync(indexPath), "index.html should exist");
 assert.ok(existsSync(videoPath), "cover video should be stored under assets/video");
+assert.ok(existsSync(celebrationVideoPath), "celebration video should be stored under assets/video");
 assert.ok(existsSync(backgroundPath), "background image should be stored under assets/images");
 assert.ok(existsSync(pageBackgroundPath), "page background image should be stored under assets/images");
 
@@ -18,6 +20,8 @@ const html = readFileSync(indexPath, "utf8");
 
 assert.match(html, /<video[^>]+id="coverVideo"[^>]+autoplay[^>]+muted[^>]+playsinline/i);
 assert.match(html, /<source\s+src="assets\/video\/Man_speaking_with_cigar_202605191432\.mp4"\s+type="video\/mp4"/i);
+assert.match(html, /<video[^>]+id="celebrationVideo"[^>]+playsinline/i);
+assert.match(html, /<source\s+src="assets\/video\/Animate_image_with_dialogue_202605241142\.mp4"\s+type="video\/mp4"/i);
 assert.match(html, /THE SPLIT/);
 assert.match(html, /SOLD OUT/);
 assert.match(html, /Cockney HQ Audio Briefing/);
@@ -33,6 +37,13 @@ assert.doesNotMatch(html, /Bloco World Cup Launch Party/);
 assert.match(html, /Food and drinks will be for sale on the day/);
 assert.match(html, /Buy tickets for Sat 6 June/);
 assert.match(html, /https:\/\/bloco\.co\.uk\/events\/world-cup-launch-party/);
+assert.match(html, /Celebration Briefing/);
+assert.match(html, /Duo arrival is 9pm/);
+assert.match(html, /Be ready to have fun and celebrate Ralph's final few days as a single man/);
+assert.match(html, /Click through to view the food menu before you arrive/);
+assert.match(html, /https:\/\/order\.toasttab\.com\/online\/bunify-harrow-rear-28-high-street-palmeston-road/);
+assert.match(html, /Gavin/);
+assert.match(html, /079837103939/);
 assert.match(html, /id="audioToggle"/);
 assert.match(html, /id="musicToggle"/);
 assert.match(html, /Soulful house backing loop/);
