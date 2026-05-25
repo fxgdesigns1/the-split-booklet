@@ -755,7 +755,7 @@
     </style>
   </head>
   <body>
-    <button class="music-toggle" id="musicToggle" type="button" aria-label="Play soulful house backing loop" title="Soulful house backing loop">
+    <button class="music-toggle" id="musicToggle" type="button" aria-label="Play background music" title="Background music">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M9 18V5l10-2v13"></path>
         <circle cx="6" cy="18" r="3"></circle>
@@ -763,6 +763,10 @@
       </svg>
       <span>Music</span>
     </button>
+
+    <audio id="backgroundMusic" loop preload="auto">
+      <source src="assets/audio/More Fire Crew - Oi_ Instrumental.mp3" type="audio/mpeg">
+    </audio>
 
     <main class="stage" aria-label="Interactive magazine booklet">
       <article class="book" id="book" data-page="route">
@@ -974,12 +978,10 @@
       const videoBackTrigger = document.getElementById("videoBackTrigger");
       const infoCloseTrigger = document.getElementById("infoCloseTrigger");
       const musicToggle = document.getElementById("musicToggle");
+      const backgroundMusic = document.getElementById("backgroundMusic");
       const celebrationVideo = document.getElementById("celebrationVideo");
       const celebrationPlayTrigger = document.getElementById("celebrationPlayTrigger");
       const videoInfoOverlayTrigger = document.getElementById("videoInfoOverlayTrigger");
-      let musicContext;
-      let musicMaster;
-      let musicTimer;
       let musicPlaying = false;
 
       function syncAudioButton() {
@@ -997,117 +999,19 @@
         }
       }
 
-      function getMusicContext() {
-        if (!musicContext) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          musicContext = new AudioContext();
-          musicMaster = musicContext.createGain();
-          musicMaster.gain.value = 0.0001;
-          musicMaster.connect(musicContext.destination);
-        }
-
-        return musicContext;
-      }
-
-      function playTone(frequency, time, duration, type = "sine", level = 0.07) {
-        const context = getMusicContext();
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-
-        oscillator.type = type;
-        oscillator.frequency.setValueAtTime(frequency, time);
-        gain.gain.setValueAtTime(0.0001, time);
-        gain.gain.exponentialRampToValueAtTime(level, time + 0.03);
-        gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-        oscillator.connect(gain);
-        gain.connect(musicMaster);
-        oscillator.start(time);
-        oscillator.stop(time + duration + 0.05);
-      }
-
-      function playHat(time) {
-        const context = getMusicContext();
-        const buffer = context.createBuffer(1, context.sampleRate * 0.05, context.sampleRate);
-        const data = buffer.getChannelData(0);
-
-        for (let index = 0; index < data.length; index += 1) {
-          data[index] = (Math.random() * 2 - 1) * (1 - index / data.length);
-        }
-
-        const noise = context.createBufferSource();
-        const filter = context.createBiquadFilter();
-        const gain = context.createGain();
-
-        noise.buffer = buffer;
-        filter.type = "highpass";
-        filter.frequency.value = 6200;
-        gain.gain.setValueAtTime(0.018, time);
-        gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(musicMaster);
-        noise.start(time);
-      }
-
-      function scheduleSoulfulHouseBar(startTime) {
-        const beat = 60 / 116;
-        const chords = [
-          [261.63, 329.63, 392.0],
-          [220.0, 277.18, 329.63],
-          [246.94, 311.13, 369.99],
-          [196.0, 246.94, 293.66],
-        ];
-
-        for (let beatIndex = 0; beatIndex < 4; beatIndex += 1) {
-          const time = startTime + beat * beatIndex;
-          playTone(55, time, 0.16, "sine", 0.13);
-          playHat(time + beat / 2);
-
-          chords[beatIndex].forEach((note, noteIndex) => {
-            playTone(note, time + 0.02 * noteIndex, beat * 0.82, "triangle", 0.018);
-          });
-        }
-      }
-
       function syncMusicButton() {
         musicToggle.classList.toggle("is-live", musicPlaying);
         musicToggle.setAttribute(
           "aria-label",
-          musicPlaying ? "Pause soulful house backing loop" : "Play soulful house backing loop",
+          musicPlaying ? "Pause background music" : "Play background music",
         );
       }
 
-      function createSoulfulHouseLoop() {
-        const context = getMusicContext();
-        const beat = 60 / 116;
-        let nextBarTime = context.currentTime + 0.08;
-
-        musicMaster.gain.cancelScheduledValues(context.currentTime);
-        musicMaster.gain.setValueAtTime(musicMaster.gain.value, context.currentTime);
-        musicMaster.gain.linearRampToValueAtTime(0.12, context.currentTime + 0.7);
-        scheduleSoulfulHouseBar(nextBarTime);
-        nextBarTime += beat * 4;
-
-        musicTimer = window.setInterval(() => {
-          if (context.currentTime + 1.1 >= nextBarTime) {
-            scheduleSoulfulHouseBar(nextBarTime);
-            nextBarTime += beat * 4;
-          }
-        }, 300);
-      }
-
       function startMusic() {
-        const context = getMusicContext();
-
-        context.resume()
+        backgroundMusic.play()
           .then(() => {
-            if (musicPlaying) {
-              return;
-            }
-
             musicPlaying = true;
             syncMusicButton();
-            createSoulfulHouseLoop();
           })
           .catch(() => {
             syncMusicButton();
@@ -1115,16 +1019,9 @@
       }
 
       function stopMusic() {
-        if (!musicContext || !musicPlaying) {
-          return;
-        }
-
-        window.clearInterval(musicTimer);
-        musicTimer = undefined;
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
         musicPlaying = false;
-        musicMaster.gain.cancelScheduledValues(musicContext.currentTime);
-        musicMaster.gain.setValueAtTime(musicMaster.gain.value, musicContext.currentTime);
-        musicMaster.gain.linearRampToValueAtTime(0.0001, musicContext.currentTime + 0.35);
         syncMusicButton();
       }
 
@@ -1196,6 +1093,7 @@
 
       window.addEventListener("DOMContentLoaded", () => {
         coverVideo.muted = true;
+        backgroundMusic.volume = 0.4;
         syncAudioButton();
         syncMusicButton();
         playCoverVideo();
