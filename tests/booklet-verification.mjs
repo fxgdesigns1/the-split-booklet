@@ -9,12 +9,14 @@ const videoPath = join(root, "assets", "video", "Man_speaking_with_cigar_2026051
 const celebrationVideoPath = join(root, "assets", "video", "Animate_image_with_dialogue_202605241142.mp4");
 const backgroundPath = join(root, "assets", "images", "groom-shave-background.jpeg");
 const pageBackgroundPath = join(root, "assets", "images", "suit-fitting-background.jpeg");
+const duoMapPath = join(root, "assets", "images", "duo-map.png");
 
 assert.ok(existsSync(indexPath), "index.html should exist");
 assert.ok(existsSync(videoPath), "cover video should be stored under assets/video");
 assert.ok(existsSync(celebrationVideoPath), "celebration video should be stored under assets/video");
 assert.ok(existsSync(backgroundPath), "background image should be stored under assets/images");
 assert.ok(existsSync(pageBackgroundPath), "page background image should be stored under assets/images");
+assert.ok(existsSync(duoMapPath), "duo map image should be stored under assets/images");
 
 const html = readFileSync(indexPath, "utf8");
 
@@ -43,7 +45,7 @@ assert.match(html, /Celebration Briefing/);
 assert.match(html, /Duo Clapham map/);
 assert.match(html, /class="map-shell"/);
 assert.match(html, /class="map-frame"/);
-assert.match(html, /https:\/\/maps\.google\.com\/maps\?q=Duo%20Clapham%2C%2015-16%20Lendal%20Terrace%2C%20London%20SW4%207UX/);
+assert.match(html, /src="assets\/images\/duo-map\.png"/);
 assert.match(html, /Open in Google Maps/);
 assert.doesNotMatch(html, /map-fallback/);
 assert.match(html, /Be ready to have fun and celebrate Ralph's final few days as a single man/);
