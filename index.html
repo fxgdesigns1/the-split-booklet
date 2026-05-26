@@ -176,33 +176,6 @@
         box-shadow: 0 12px 26px rgba(0, 0, 0, 0.34);
       }
 
-      .briefing-bubble {
-        align-self: end;
-        width: min(82%, 340px);
-        padding: 14px 16px;
-        border: 1px solid var(--line);
-        border-radius: 7px;
-        background: rgba(16, 15, 14, 0.72);
-        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
-        backdrop-filter: blur(9px);
-      }
-
-      .briefing-bubble strong {
-        display: block;
-        color: var(--gold);
-        font-size: 12px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .briefing-bubble span {
-        display: block;
-        margin-top: 5px;
-        color: rgba(255, 247, 223, 0.9);
-        font-size: 14px;
-        line-height: 1.35;
-      }
-
       .cover-actions {
         display: flex;
         align-items: end;
@@ -743,14 +716,6 @@
           min-height: 76px;
           font-size: 12px;
         }
-
-        .timeline li {
-          grid-template-columns: 58px 1fr;
-        }
-
-        .page-nav {
-          justify-content: start;
-        }
       }
     </style>
   </head>
@@ -799,11 +764,6 @@
                 <div class="issue-line">World Cup Launch Dispatch</div>
               </div>
               <div class="sold-out" aria-label="SOLD OUT">Sold<br>Out</div>
-            </div>
-
-            <div class="briefing-bubble">
-              <strong>Cockney HQ Audio Briefing</strong>
-              <span>June 6 route: East London fittings, West London fittings, then Clapham drinks and the World Cup launch link-up.</span>
             </div>
 
             <div class="cover-actions">
@@ -892,7 +852,6 @@
           <div class="video-frame">
             <div class="video-actions">
               <button class="mission-button play-message" id="celebrationPlayTrigger" type="button">Play Message</button>
-              <button class="nav-button" id="videoInfoOverlayTrigger" type="button">Info</button>
             </div>
             <p class="video-note">Watch the message full-screen in the booklet, then turn the page for the drinks, food, map, and celebration details.</p>
           </div>
@@ -981,7 +940,6 @@
       const backgroundMusic = document.getElementById("backgroundMusic");
       const celebrationVideo = document.getElementById("celebrationVideo");
       const celebrationPlayTrigger = document.getElementById("celebrationPlayTrigger");
-      const videoInfoOverlayTrigger = document.getElementById("videoInfoOverlayTrigger");
       let musicPlaying = false;
 
       function syncAudioButton() {
@@ -1007,20 +965,44 @@
         );
       }
 
+      function setMusicStartPosition() {
+        if (!Number.isFinite(backgroundMusic.duration) || backgroundMusic.duration <= 0) {
+          return;
+        }
+
+        const startPoint = Math.min(30, Math.max(0, backgroundMusic.duration - 0.1));
+        if (backgroundMusic.currentTime < startPoint - 0.5 || backgroundMusic.currentTime >= backgroundMusic.duration - 0.25) {
+          backgroundMusic.currentTime = startPoint;
+        }
+      }
+
       function startMusic() {
-        backgroundMusic.play()
-          .then(() => {
-            musicPlaying = true;
-            syncMusicButton();
-          })
-          .catch(() => {
-            syncMusicButton();
-          });
+        const beginPlayback = () => {
+          setMusicStartPosition();
+
+          backgroundMusic.play()
+            .then(() => {
+              musicPlaying = true;
+              syncMusicButton();
+            })
+            .catch(() => {
+              syncMusicButton();
+            });
+        };
+
+        if (backgroundMusic.readyState < 1) {
+          backgroundMusic.addEventListener("loadedmetadata", beginPlayback, { once: true });
+          return;
+        }
+
+        beginPlayback();
       }
 
       function stopMusic() {
         backgroundMusic.pause();
-        backgroundMusic.currentTime = 0;
+        if (Number.isFinite(backgroundMusic.duration) && backgroundMusic.duration > 0) {
+          backgroundMusic.currentTime = Math.min(30, Math.max(0, backgroundMusic.duration - 0.1));
+        }
         musicPlaying = false;
         syncMusicButton();
       }
@@ -1065,7 +1047,7 @@
       function playCelebrationVideo() {
         book.classList.add("is-open");
         setBookPage("video");
-        stopMusic();
+        startMusic();
         celebrationVideo.currentTime = 0;
         celebrationVideo.muted = false;
         celebrationVideo.volume = 1;
@@ -1093,7 +1075,8 @@
 
       window.addEventListener("DOMContentLoaded", () => {
         coverVideo.muted = true;
-        backgroundMusic.volume = 0.4;
+        backgroundMusic.volume = 0.38;
+        backgroundMusic.addEventListener("loadedmetadata", setMusicStartPosition, { once: true });
         syncAudioButton();
         syncMusicButton();
         playCoverVideo();
@@ -1118,7 +1101,6 @@
       videoBackTrigger.addEventListener("click", openCelebrationVideo);
       infoCloseTrigger.addEventListener("click", closeBook);
       celebrationPlayTrigger.addEventListener("click", playCelebrationVideo);
-      videoInfoOverlayTrigger.addEventListener("click", openCelebrationInfo);
       coverVideo.addEventListener("ended", openBook);
       celebrationVideo.addEventListener("ended", () => {
         if (book.dataset.page === "video") {
