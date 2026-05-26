@@ -359,6 +359,15 @@
         text-transform: uppercase;
       }
 
+      .page-subtitle {
+        margin: 7px 0 0;
+        color: rgba(32, 26, 22, 0.68);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
       .timeline {
         margin: 0;
         padding: 0;
@@ -413,6 +422,10 @@
 
       .route-page h2 {
         font-size: clamp(26px, 5.8vw, 38px);
+      }
+
+      .route-page .page-subtitle {
+        margin-top: 5px;
       }
 
       .route-page .timeline {
@@ -717,6 +730,115 @@
           font-size: 12px;
         }
       }
+
+      @media (max-width: 420px) {
+        body {
+          padding: 12px 0;
+        }
+
+        .stage {
+          width: min(94vw, 398px);
+        }
+
+        .route-page,
+        .info-page {
+          padding: 13px;
+        }
+
+        .route-page {
+          gap: 8px;
+        }
+
+        .route-page header,
+        .info-page header {
+          gap: 8px;
+          padding-bottom: 6px;
+        }
+
+        .route-page h2,
+        .info-page h2 {
+          font-size: 24px;
+        }
+
+        .route-page .timeline {
+          gap: 5px;
+        }
+
+        .route-page .timeline li {
+          grid-template-columns: 51px 1fr;
+          gap: 8px;
+          padding-bottom: 5px;
+        }
+
+        .route-page .timeline strong {
+          font-size: 12.5px;
+        }
+
+        .route-page .timeline span {
+          font-size: 11px;
+          line-height: 1.2;
+        }
+
+        .info-page {
+          gap: 5px;
+        }
+
+        .info-page .page-nav {
+          gap: 5px;
+        }
+
+        .info-page .nav-button {
+          padding: 7px 8px;
+          font-size: 9px;
+          letter-spacing: 0.08em;
+        }
+
+        .info-page .kicker {
+          margin-bottom: 4px;
+          font-size: 9.5px;
+          letter-spacing: 0.1em;
+        }
+
+        .info-page h2 {
+          font-size: 21px;
+        }
+
+        .info-page .info-panel {
+          gap: 3px;
+        }
+
+        .info-page .info-card {
+          padding: 4px 6px;
+        }
+
+        .info-page .info-card strong {
+          font-size: 9px;
+          letter-spacing: 0.08em;
+        }
+
+        .info-page .info-card span,
+        .info-page .info-card a {
+          font-size: 9px;
+          line-height: 1.1;
+        }
+
+        .info-page .map-shell {
+          height: 70px;
+          margin-top: 4px;
+        }
+
+        .info-page .map-action,
+        .info-page .whatsapp-link {
+          margin-top: 3px;
+          padding: 3px 5px;
+          font-size: 9px;
+        }
+
+        .inside-footer {
+          font-size: 10px;
+          letter-spacing: 0.08em;
+        }
+      }
     </style>
   </head>
   <body>
@@ -776,8 +898,9 @@
         <section class="inside route-page" aria-label="Internal Suitsupply timeline pages">
           <header>
             <div>
-              <p class="kicker">Saturday 6 June</p>
+              <p class="kicker">Groomsmen Only</p>
               <h2>London Stage Route</h2>
+              <p class="page-subtitle">Saturday 6 June</p>
             </div>
             <div class="page-nav">
               <button class="nav-button" id="closeTrigger" type="button">Close Cover</button>
@@ -865,8 +988,8 @@
         <section class="inside info-page" aria-label="Celebration information page">
           <header>
             <div>
-              <p class="kicker">Drinks & Celebration</p>
-              <h2>Final Few Days</h2>
+              <p class="kicker">For Everyone Else</p>
+              <h2>Drinks & Celebration</h2>
             </div>
             <div class="page-nav">
               <button class="nav-button" id="videoBackTrigger" type="button">Video</button>
@@ -1039,15 +1162,10 @@
         book.classList.add("is-open");
         setBookPage("video");
         startMusic();
-        celebrationVideo.pause();
-        celebrationVideo.currentTime = 0;
-        celebrationVideo.muted = false;
+        autoPlayCelebrationVideo();
       }
 
-      function playCelebrationVideo() {
-        book.classList.add("is-open");
-        setBookPage("video");
-        startMusic();
+      function autoPlayCelebrationVideo() {
         celebrationVideo.currentTime = 0;
         celebrationVideo.muted = false;
         celebrationVideo.volume = 1;
@@ -1056,6 +1174,13 @@
         if (playRequest) {
           playRequest.catch(() => {});
         }
+      }
+
+      function playCelebrationVideo() {
+        book.classList.add("is-open");
+        setBookPage("video");
+        startMusic();
+        autoPlayCelebrationVideo();
       }
 
       function openCelebrationInfo() {
